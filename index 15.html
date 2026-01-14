@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mindful Jaap - Sadhna Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --bg: #ffffff; --text: #000; --accent: #ff9800; --border: #eee; --card: #f9f9f9; --gold: #d4af37; }
+        body.dark { --bg: #000; --text: #fff; --border: #222; --card: #111; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; transition: 0.3s; height: 100vh; display: flex; flex-direction: column; overflow: hidden; text-align: center; }
+        .streak-banner { background: #fff3e0; padding: 10px; font-weight: bold; color: #e65100; font-size: 18px; border-bottom: 2px solid #ffe0b2; }
+        #onboarding { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+        input { padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 16px; }
+        .header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .main-ui { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; }
+        .counter-circle { width: 220px; height: 220px; border-radius: 50%; border: 8px solid var(--accent); display: flex; flex-direction: column; justify-content: center; background: var(--bg); z-index: 10; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        #main-num { font-size: 70px; font-weight: bold; margin-bottom: -10px; }
+        .beads-left { font-size: 14px; color: var(--accent); font-weight: bold; margin-top: 5px; }
+        .modal { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; padding: 20px; overflow-y: auto; text-align: left; }
+        .close-btn { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; float: right; cursor: pointer; }
+        #certificateModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 600; align-items: center; justify-content: center; padding: 10px; }
+        #certificateContent { background: #fff; color: #000; padding: 30px; border-radius: 15px; width: 340px; text-align: center; border: 8px double var(--gold); }
+    </style>
+</head>
+<body>
+
+    <div id="onboarding">
+        <h1 style="color:var(--accent)">Mindful Jaap</h1>
+        <p>अपना नाम और स्थान लिखें</p>
+        <input type="text" id="uName" placeholder="आपका नाम">
+        <input type="text" id="uLoc" placeholder="शहर">
+        <button onclick="saveUser()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px; font-size:18px; cursor:pointer;">साधना शुरू करें</button>
+    </div>
+
+    <div class="streak-banner">🔥 Streak: <span id="streak-val">0</span> Days</div>
+
+    <div class="header">
+        <div style="text-align: left;">
+            <div style="font-weight: bold; font-size: 14px; color: var(--accent);" id="user-name">साधक</div>
+            <div style="font-size:10px; color:#4CAF50;">● Live Now</div>
+        </div>
+        <div><button onclick="openModal('settingsModal')" style="background:none; border:none; font-size:20px; cursor:pointer;">⚙️</button></div>
+    </div>
+
+    <div class="main-ui" onclick="handleTap()">
+        <div id="active-mantra" style="font-size:20px; font-weight:bold; margin-bottom:20px; color:var(--accent);">ॐ नमः शिवाय</div>
+        <div class="counter-circle">
+            <div id="main-num">0</div>
+            <div style="font-size:10px; opacity:0.6;">कुल जाप</div>
+            <div class="beads-left">शेष (Left): <span id="beads-countdown">108</span></div>
+        </div>
+        <div id="mala-info" style="margin-top:20px; font-weight:bold;">माला: <span id="mala-count">0</span> / <span id="goal-val">1</span></div>
+    </div>
+
+    <div id="certificateModal">
+        <div id="certificateContent">
+            <div style="font-size: 40px;">🕉️</div>
+            <h2 style="color:var(--gold); margin:5px 0;">SADHNA CERTIFICATE</h2>
+            <h3 id="cert-name" style="font-size:1.8em; margin:15px 0; color:#333; border-bottom: 2px solid var(--gold); display: inline-block;"></h3>
+            <p>ने आज <b>Mindful Jaap</b> पर अपनी साधना पूर्ण की।</p>
+            <div style="margin:15px 0; font-size:0.9em; text-align:left; background:#fdfbf0; padding:15px; border-radius:10px;">
+                <div><b>मंत्र:</b> <span id="cert-mantra"></span></div>
+                <div><b>मालाएं:</b> <span id="cert-malas"></span></div>
+                <div><b>दिनांक:</b> <span id="cert-date"></span></div>
+            </div>
+            <div style="font-weight:bold; color:#E1306C; margin-bottom:15px;">Instagram: @mindful.jaap</div>
+            <button onclick="downloadCert()" style="background:var(--gold); color:white; border:none; padding:12px 25px; border-radius:10px; font-weight:bold; cursor:pointer;">Download Certificate</button>
+            <p onclick="closeModal('certificateModal')" style="margin-top:15px; cursor:pointer; opacity:0.5;">Close</p>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <button class="close-btn" onclick="closeModal('settingsModal')">X</button>
+        <h2>Settings</h2>
+        <p>Goal: <select id="goalSet" onchange="updateGoal()"><option value="1">1 Mala</option><option value="11">11 Malas</option></select></p>
+        <p>Mantra: <select id="mList" onchange="changeMantra()">
+            <option value="ॐ नमः शिवाय">ॐ नमः शिवाय</option>
+            <option value="ॐ घृणि सूर्याय नमः">ॐ घृणि सूर्याय नमः</option>
+            <option value="ॐ सोमाय नमः">ॐ सोमाय नमः</option>
+            <option value="ॐ अंगारकाय नमः">ॐ अंगारकाय नमः</option>
+            <option value="ॐ बुधाय नमः">ॐ बुधाय नमः</option>
+            <option value="ॐ बृहस्पतये नमः">ॐ बृहस्पतये नमः</option>
+            <option value="ॐ शुक्राय नमः">ॐ शुक्राय नमः</option>
+            <option value="ॐ शनैश्चराय नमः">ॐ शनैश्चराय नमः</option>
+            <option value="ॐ राहवे नमः">ॐ राहवे नमः</option>
+            <option value="ॐ केतवे नमः">ॐ केतवे नमः</option>
+            <option value="ॐ हम हनुमंते नमः">ॐ हम हनुमंते नमः</option>
+            <option value="ॐ गं गणपतये नमः">ॐ गं गणपतये नमः</option>
+            <option value="ॐ नमो भगवते वासुदेवाय">ॐ नमो भगवते वासुदेवाय</option>
+            <option value="ॐ गायत्री मंत्र">ॐ गायत्री मंत्र</option>
+            <option value="ॐ महामृत्युंजय मंत्र">ॐ महामृत्युंजय मंत्र</option>
+        </select></p>
+        <button onclick="document.body.classList.toggle('dark')" style="width:100%; padding:15px; border:1px solid #ccc; border-radius:10px; margin-top:10px;">Dark Mode</button>
+    </div>
+
+    <audio id="click-sound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+    <audio id="alert-100" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"></audio>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('mj_v18')) || { total: 0, malas: 0, streak: 0, lastDate: '', goal: 1 };
+        let user = JSON.parse(localStorage.getItem('mj_user')) || null;
+        let activeM = "ॐ नमः शिवाय";
+
+        if(user) { 
+            document.getElementById('onboarding').style.display = 'none'; 
+            document.getElementById('user-name').innerText = user.name;
+        }
+
+        function saveUser() {
+            let n = document.getElementById('uName').value; let l = document.getElementById('uLoc').value;
+            if(n && l) {
+                user = { name: n, loc: l };
+                localStorage.setItem('mj_user', JSON.stringify(user));
+                location.reload();
+            }
+        }
+
+        function handleTap() {
+            db.total++;
+            let current = db.total % 108;
+            let left = 108 - (current === 0 ? 108 : current);
+            document.getElementById('click-sound').currentTime=0; document.getElementById('click-sound').play();
+            if(current ===
